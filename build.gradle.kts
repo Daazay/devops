@@ -16,9 +16,6 @@ repositories {
 }
 
 dependencies {
-    testImplementation(libs.kotlin.test.junit)
-    testImplementation(libs.ktor.server.test.host.jvm)
-
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.cors)
@@ -42,4 +39,17 @@ dependencies {
     implementation(libs.koin.core)
     implementation(libs.koin.ktor)
     implementation(libs.koin.logger.slf4j)
+
+//    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.ktor.server.test.host.jvm)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.kotlin.test)
+}
+
+tasks.test {
+    useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
 }

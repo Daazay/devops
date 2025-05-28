@@ -15,7 +15,7 @@ import java.util.*
 fun Route.configureBuildingRoute(
     controller: BuildingController = getKoin().get<BuildingController>(),
 ) {
-    route("/building") {
+    route("/buildings") {
         authenticate("user") {
             post("/") {
                 try {
