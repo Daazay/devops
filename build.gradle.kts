@@ -16,6 +16,9 @@ repositories {
 }
 
 dependencies {
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.ktor.server.test.host.jvm)
+
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.cors)
@@ -36,10 +39,7 @@ dependencies {
     implementation(libs.postgresql)
     implementation(libs.commons.codec)
 
-    implementation(project.dependencies.platform(libs.koin.bom))
     implementation(libs.koin.core)
-}
-
-tasks.test {
-    useJUnitPlatform()
+    implementation(libs.koin.ktor)
+    implementation(libs.koin.logger.slf4j)
 }

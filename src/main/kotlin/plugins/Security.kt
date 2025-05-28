@@ -10,7 +10,7 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.response.*
 import io.ktor.server.sessions.*
 import org.daazay.config.JWTConfig
-import org.daazay.domain.model.UserRole
+import org.daazay.domain.model.auth.UserRole
 import org.koin.java.KoinJavaComponent.getKoin
 
 fun Application.configureSecurity(
@@ -23,7 +23,7 @@ fun Application.configureSecurity(
         .build()
 
     authentication {
-        jwt("auth-user") {
+        jwt("user") {
             realm = config.realm
             verifier(verifier)
             validate { credential -> JWTPrincipal(credential.payload) }
@@ -31,7 +31,7 @@ fun Application.configureSecurity(
                 call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Token is not valid or has expired"))
             }
         }
-        jwt("auth-admin") {
+        jwt("admin") {
             realm = config.realm
             verifier(verifier)
             validate { credential ->
@@ -46,7 +46,7 @@ fun Application.configureSecurity(
                 call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Token is not valid or has expired"))
             }
         }
-        jwt("auth-refresh") {
+        jwt("refresh") {
             verifier(JWT.require(Algorithm.HMAC256(config.refreshSecret))
                     .withSubject("refresh")
                     .withAudience(config.audience)

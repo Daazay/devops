@@ -10,6 +10,8 @@ fun<T> tranzaction(
     try {
         return@transaction inner()
     } catch (e: ExposedSQLException) {
+        println("Error: ${e.localizedMessage}")
+        println(e)
         rollback()
         if (e.isUniqueConstraintViolation()) {
             onUniqueConstraintViolation()
