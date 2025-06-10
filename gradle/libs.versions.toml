@@ -8,6 +8,7 @@ h2 = "2.3.232"
 common-code = "1.16.0"
 koin = "4.0.4"
 mockk = "1.13.10"
+prometheus = "1.6.13"
 coroutines = "1.7.3"
 
 [libraries]
@@ -39,6 +40,9 @@ koin-logger-slf4j = { group = "io.insert-koin", name = "koin-logger-slf4j", vers
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+
+micrometer-registry-prometheus = { group = "io.micrometer", name = "micrometer-registry-prometheus", version.ref = "prometheus" }
+ktor-server-metrics-micrometer = { group = "io.ktor", name = "ktor-server-metrics-micrometer", version.ref="ktor" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

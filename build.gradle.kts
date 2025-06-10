@@ -45,6 +45,11 @@ dependencies {
     testImplementation(libs.mockk)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.kotlin.test)
+
+    // metrics
+    implementation(libs.micrometer.registry.prometheus)
+
+    implementation(libs.ktor.server.metrics.micrometer)
 }
 
 tasks.test {

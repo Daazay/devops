@@ -1,6 +1,9 @@
 package org.daazay.plugins
 
 import io.ktor.server.application.*
+import io.micrometer.core.instrument.Counter
+import io.micrometer.prometheus.PrometheusConfig
+import io.micrometer.prometheus.PrometheusMeterRegistry
 import org.daazay.config.DBConfig
 import org.daazay.config.JWTConfig
 import org.daazay.data.repository.auth.SessionRepositoryImpl
@@ -25,6 +28,7 @@ import org.daazay.presentation.controller.booking.BuildingController
 import org.daazay.presentation.controller.booking.RoomController
 import org.koin.core.module.dsl.createdAtStart
 import org.koin.core.module.dsl.withOptions
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.koin.ktor.plugin.Koin
 
@@ -35,6 +39,11 @@ fun Application.configureDI() {
                 createdAtStart()
             }
             single { JWTConfig.fromEnv() } withOptions {
+                createdAtStart()
+            }
+            single {
+                PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
+            }  withOptions {
                 createdAtStart()
             }
 
