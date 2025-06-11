@@ -74,7 +74,8 @@ jobs:
       id: login-cr
       uses: yc-actions/yc-cr-login@v3
       with:
-        yc-sa-json-credentials: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
+        yc-sa-id: ${{ secrets.YC_SA_ID }}
+        # yc-sa-json-credentials: ${{ secrets.YC_SERVICE_ACCOUNT_KEY }}
 
     - name: Build, tag, and push image to Yandex Cloud Container Registry
       run: |
