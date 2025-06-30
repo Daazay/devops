@@ -109,20 +109,26 @@ jobs:
           docker build -t cr.yandex/${{ secrets.YC_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
           docker push cr.yandex/${{ secrets.YC_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
 
-  # deploy:
-  #   name: Deploy to k8s
-  #   needs: docker_push
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+  deploy:
+    name: Deploy to Ya Cloud K8s
+    needs: docker_push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  #     - name: Setup Kubeconfig
-  #       run: |
-  #         echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > kubeconfig.yaml
-  #         export KUBECONFIG=$PWD/kubeconfig.yaml
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
 
-  #     - name: Redeploy
-  #       run: |
-  #         kubectl set image deployment/backend backend=cr.yandex/${{ secrets.YC_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-  #         kubectl rollout status deployment/backend
+      - name: Setup kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > kubeconfig.yaml
+          export KUBECONFIG=$PWD/kubeconfig.yaml
+          kubectl config get-contexts
+
+      - name: Set image in deployment
+        run: |
+          kubectl set image deployment/backend backend=cr.yandex/${{ secrets.YC_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          kubectl rollout status deployment/backend
