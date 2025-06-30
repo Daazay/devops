@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.ktor)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.sonarqube)
+    jacoco
 }
 
 group = "org.daazay"
@@ -56,5 +58,71 @@ tasks.test {
     useJUnitPlatform()
     testLogging {
         events("passed", "skipped", "failed")
+    }
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+jacoco {
+    toolVersion = "0.8.10"
+}
+
+tasks.jacocoTestReport {
+    dependsOn(tasks.test)
+
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        csv.required.set(false)
+    }
+
+    classDirectories.setFrom(
+        files(classDirectories.files.map {
+            fileTree(it) {
+                exclude(
+                    "**/MainKt.class",
+                    "**/dto/**",
+                    "**/model/**",
+                    "**/request/**",
+                    "**/response/**",
+                    "**/mapper/**",
+                    "**/utils/**",
+                    "**/table/**",
+                    "**/config/**",
+                    "**/generated/**",
+                )
+            }
+        })
+    )
+}
+
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test)
+
+    violationRules {
+        rule {
+            limit {
+                minimum = "0.80".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
+}
+
+sonar {
+    properties {
+        property("sonar.projectKey", "roombook")
+        property("sonar.organization", "daazay")
+        property("sonar.host.url", System.getenv("SONAR_HOST_URL"))
+        property("sonar.token", System.getenv("SONAR_TOKEN"))
+
+        property("sonar.sources", "src/main/kotlin")
+        property("sonar.tests", "src/test/kotlin")
+
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/test/jacocoTestReport.xml")
+
+        property("sonar.java.binaries", "build/classes/kotlin/main")
     }
 }

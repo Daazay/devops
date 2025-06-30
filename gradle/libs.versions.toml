@@ -10,6 +10,7 @@ koin = "4.0.4"
 mockk = "1.13.10"
 prometheus = "1.6.13"
 coroutines = "1.7.3"
+sonarqube = "6.2.0.5505"
 
 [libraries]
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
@@ -48,3 +49,4 @@ ktor-server-metrics-micrometer = { group = "io.ktor", name = "ktor-server-metric
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
