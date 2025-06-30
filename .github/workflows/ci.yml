@@ -13,10 +13,8 @@ env:
 
 jobs:
   build:
+    name: Build project
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -38,14 +36,13 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Build with Gradle Wrapper
-      run: ./gradlew assemble
+    - name: Build project
+      run: ./gradlew build -x test
 
   test:
+    name: Run tests with coverage
     needs: build
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
 
     steps:
     - name: Checkout code
@@ -54,61 +51,75 @@ jobs:
     - name: Set up JDK
       uses: actions/setup-java@v3
       with:
-        java-version: '17'
+        java-version: '21'
         distribution: 'temurin'
         cache: 'gradle'
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+    - name: Run tests and coverage
+      run: ./gradlew test jacocoTestReport
 
-    - name: Run tests
-      run: ./gradlew test
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: jacoco-report
+        path: build/reports/jacoco/test/jacocoTestReport.xml
 
   sonar:
+    name: Run SonarQube with coverage
     needs: test
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
 
-      - name: Grant execute permission
-        run: chmod +x gradlew
-
-      - name: SonarQube scan
-        run: ./gradlew sonar
+      - name: Run SonarQube analysis with coverage verification
+        run: ./gradlew check sonarqube
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
   docker_push:
-    needs: test
+    name: Build & Push Docker image
+    needs: sonar
+    if: ${{ success() }}
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Login to Yandex Cloud Container Registry
-      id: login-cr
-      uses: yc-actions/yc-cr-login@v3
-      with:
-        yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+      - name: Login to Yandex Cloud Container Registry
+        uses: yc-actions/yc-cr-login@v3
+        with:
+          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
 
-    - name: Build, tag, and push image to Yandex Cloud Container Registry
-      run: |
-        docker build -t cr.yandex/${{ secrets.YC_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
-        docker push cr.yandex/${{ secrets.YC_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+      - name: Build and push image
+        run: |
+          docker build -t cr.yandex/${{ secrets.YC_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} .
+          docker push cr.yandex/${{ secrets.YC_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+  # deploy:
+  #   name: Deploy to k8s
+  #   needs: docker_push
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+
+  #     - name: Setup Kubeconfig
+  #       run: |
+  #         echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > kubeconfig.yaml
+  #         export KUBECONFIG=$PWD/kubeconfig.yaml
+
+  #     - name: Redeploy
+  #       run: |
+  #         kubectl set image deployment/backend backend=cr.yandex/${{ secrets.YC_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+  #         kubectl rollout status deployment/backend
