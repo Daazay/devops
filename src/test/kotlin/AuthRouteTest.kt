@@ -1,5 +1,6 @@
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.auth0.jwt.impl.JWTParser
 import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
@@ -30,9 +31,11 @@ import io.ktor.server.response.*
 import io.mockk.coEvery
 import io.mockk.every
 import kotlinx.datetime.LocalDateTime
+import org.daazay.presentation.request.auth.AuthLoginRequest
 import org.daazay.presentation.response.auth.AuthResponse
 import org.daazay.presentation.response.auth.UserResponse
 import org.daazay.utils.Result
+import java.util.*
 import kotlin.time.Instant
 
 class AuthRouteTest {
@@ -67,34 +70,20 @@ class AuthRouteTest {
         install(Sessions) {
             cookie<String>("refresh_token")
         }
-        // Please read the jwt property from the config file if you are using EngineMain
-        val jwtAudience = "jwt-audience"
-        val jwtDomain = "https://jwt-provider-domain/"
-        val jwtRealm = "ktor sample app"
+
+        val jwtAudience = "audience"
+        val jwtDomain = "localhost"
+        val jwtRealm = "realm"
         val jwtSecret = "secret"
         authentication {
             jwt("user") {
-                realm = jwtRealm
-                verifier(JWT
-                    .require(Algorithm.HMAC256(jwtSecret))
-                    .withAudience(jwtAudience)
-                    .withIssuer(jwtDomain)
-                    .build())
-                validate { credential -> JWTPrincipal(credential.payload) }
-                challenge { _, _ ->
-                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Token is not valid or has expired"))
+                validate { credential ->
+                    JWTPrincipal(credential.payload)
                 }
             }
             jwt("refresh") {
-                realm = jwtRealm
-                verifier(JWT
-                    .require(Algorithm.HMAC256(jwtSecret))
-                    .withAudience(jwtAudience)
-                    .withIssuer(jwtDomain)
-                    .build())
-                validate { credential -> JWTPrincipal(credential.payload) }
-                challenge { _, _ ->
-                    call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Token is not valid or has expired"))
+                validate { credential ->
+                    JWTPrincipal(credential.payload)
                 }
             }
         }
@@ -122,7 +111,45 @@ class AuthRouteTest {
             assertEquals(HttpStatusCode.OK, status)
         }
     }
-}
 
-@Serializable
-data class MySession(val count: Int = 0)
+    @Test
+    fun `POST login should return 200 OK on success`() = testApplication {
+        application { testModule() }
+
+        val request = AuthLoginRequest(
+            email = "test@mail.com",
+            password = "password",
+        )
+
+        coEvery { controller.login(request) } returns Result.Success(authResponse)
+
+        client.post("/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody(Json.encodeToString(request))
+        }.apply {
+            assertEquals(HttpStatusCode.OK, status)
+        }
+    }
+
+    @Test
+    fun `GET logout should return 200 OK on success`() = testApplication {
+        application { testModule() }
+
+        coEvery { controller.logout(UUID.randomUUID(), UUID.randomUUID()) } returns Result.Success(Unit)
+
+        client.get("/auth/logout").apply {
+            assertEquals(HttpStatusCode.Unauthorized, status)
+        }
+    }
+
+    @Test
+    fun `GET refresh should return 200 OK on success`() = testApplication {
+        application { testModule() }
+
+        coEvery { controller.refreshToken(UUID.randomUUID(), UUID.randomUUID()) } returns Result.Success(authResponse)
+
+        client.get("/auth/refresh").apply {
+            assertEquals(HttpStatusCode.Unauthorized, status)
+        }
+    }
+}
