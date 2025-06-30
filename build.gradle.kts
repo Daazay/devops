@@ -66,6 +66,24 @@ jacoco {
     toolVersion = "0.8.10"
 }
 
+val jacocoExclusions = listOf(
+    "org/daazay/config/**",
+    "org/daazay/**/model/**",
+    "org/daazay/**/mapper/**",
+    "org/daazay/**/table/**",
+    "org/daazay/**/utils/**",
+    "org/daazay/plugins/**",
+    "org/daazay/**/request/**",
+    "org/daazay/**/response/**",
+    "org/daazay/**/controller/**",
+    "org/daazay/**/repository/**",
+    "org/daazay/**/service/**",
+    "org/daazay/ApplicationKt.class",
+    "org/daazay/**/Function[0-9]*.class",
+    "**/*$*",
+    "**/generated/**"
+)
+
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
 
@@ -78,23 +96,7 @@ tasks.jacocoTestReport {
     classDirectories.setFrom(
         files(classDirectories.files.map {
             fileTree(it) {
-                exclude(
-                    "org/daazay/config/**", // Adjust 'com/example' to your package structure
-                    "org/daazay/**/model/**",
-                    "org/daazay/**/mapper/**",
-                    "org/daazay/**/table/**",
-                    "org/daazay/**/utils/**",
-                    "org/daazay/plugins/**",
-                    "org/daazay/**/request/**",
-                    "org/daazay/**/response/**",
-                    "org/daazay/**/controller/**",
-                    "org/daazay/**/repository/**",
-                    "org/daazay/**/service/**",
-                    "org/daazay/ApplicationKt.class", // Note: Application.kt compiles to ApplicationKt.class
-                    "org/daazay/**/Function[0-9]*.class",
-                    "**/*$*",
-                    "**/generated/**"
-                )
+                exclude(jacocoExclusions)
             }
         })
     )
@@ -103,10 +105,20 @@ tasks.jacocoTestReport {
 tasks.jacocoTestCoverageVerification {
     dependsOn(tasks.test)
 
+    classDirectories.setFrom(
+        files(tasks.jacocoTestReport.get().classDirectories.files.map {
+            fileTree(it) {
+                exclude(jacocoExclusions)
+            }
+        })
+    )
+    sourceDirectories.setFrom(files("src/main/kotlin"))
+    executionData.setFrom(files("build/jacoco/test.exec"))
+
     violationRules {
         rule {
             limit {
-                minimum = "0.10".toBigDecimal()
+                minimum = "0.80".toBigDecimal()
             }
         }
     }
@@ -150,5 +162,6 @@ sonar {
 
         property("sonar.exclusions", excludedDirs.joinToString(","))
         property("sonar.coverage.exclusions", excludedDirs.joinToString(","))
+        property("sonar.coverage.minimum", "80.0")
     }
 }
