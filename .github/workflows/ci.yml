@@ -95,6 +95,8 @@ jobs:
     needs: sonar
     if: ${{ success() }}
     runs-on: ubuntu-latest
+    env:
+      KUBECONFIG: ${{ github.workspace }}/kubeconfig.yaml
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -124,9 +126,13 @@ jobs:
 
       - name: Setup kubeconfig
         run: |
-          echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > kubeconfig.yaml
-          export KUBECONFIG=$PWD/kubeconfig.yaml
-          kubectl config get-contexts
+          echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > $KUBECONFIG
+
+      - name: Set context
+        run: kubectl config use-context yc-k8s-cluster
+
+      - name: Verify K8s access
+        run: kubectl config current-context
 
       - name: Set image in deployment
         run: |
