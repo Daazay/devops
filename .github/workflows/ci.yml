@@ -115,6 +115,8 @@ jobs:
     name: Deploy to Ya Cloud K8s
     needs: docker_push
     runs-on: ubuntu-latest
+    env:
+      KUBECONFIG: ${{ github.workspace }}/kubeconfig.yaml
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
